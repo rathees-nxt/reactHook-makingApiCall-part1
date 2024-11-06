@@ -2,6 +2,8 @@ import {useState, useEffect} from 'react'
 
 import Loader from 'react-loader-spinner'
 
+import LeaderboardTable from '../LeaderboardTable'
+
 import {
   LeaderboardContainer,
   LoadingViewContainer,
@@ -21,6 +23,7 @@ const Leaderboard = () => {
     data: null,
     errorMsg: null,
   })
+
   useEffect(() => {
     const getLeaderBoardData = async () => {
       setApiResponse({
@@ -38,10 +41,22 @@ const Leaderboard = () => {
       }
       const response = await fetch(url, options)
       const responseData = await response.json()
-      console.log(responseData)
+      if (response.ok) {
+        setApiResponse(prevApiResponse => ({
+          ...prevApiResponse,
+          status: apiStatusConstants.success,
+          data: responseData,
+        }))
+      } else {
+        setApiResponse(prevApiResponse => ({
+          ...prevApiResponse,
+          status: apiStatusConstants.failure,
+          errorMsg: responseData.error_msg,
+        }))
+      }
     }
     getLeaderBoardData()
-  })
+  }, [])
 
   const renderLoadingView = () => (
     <LoadingViewContainer>
@@ -49,9 +64,25 @@ const Leaderboard = () => {
     </LoadingViewContainer>
   )
 
-  const renderSuccessView = () => {}
+  const renderSuccessView = () => {
+    const {data} = apiResponse
+    const formatedLeaderBoardData = data.leaderboard_data.map(eachUser => ({
+      id: eachUser.id,
+      language: eachUser.language,
+      name: eachUser.name,
+      profileImgUrl: eachUser.profile_image_url,
+      rank: eachUser.rank,
+      score: eachUser.score,
+      timeSpent: eachUser.time_spent,
+    }))
 
-  const renderFailureView = () => {}
+    return <LeaderboardTable leaderboardData={formatedLeaderBoardData} />
+  }
+
+  const renderFailureView = () => {
+    const {errorMsg} = apiResponse
+    return <ErrorMessage>{errorMsg}</ErrorMessage>
+  }
 
   const renderLeaderboard = () => {
     const {status} = apiResponse
